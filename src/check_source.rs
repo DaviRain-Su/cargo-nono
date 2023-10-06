@@ -19,6 +19,7 @@ pub enum SourceOffense {
     UseStdStatement(UseStdStmt),
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct UseStdStmt {
     src_path: PathBuf,
@@ -155,9 +156,8 @@ pub fn get_crate_support_from_source(main_src_path: &PathBuf) -> CrateSupport {
 
     for other_source_file in other_source_files {
         let file_support = check_source(&other_source_file.unwrap(), false);
-        match file_support {
-            CrateSupport::SourceOffenses(mut off) => offenses.append(&mut off),
-            _ => {}
+        if let CrateSupport::SourceOffenses(mut off) = file_support {
+            offenses.append(&mut off)
         }
     }
 
@@ -168,7 +168,7 @@ pub fn get_crate_support_from_source(main_src_path: &PathBuf) -> CrateSupport {
 }
 
 fn check_source(source_path: &PathBuf, is_main_file: bool) -> CrateSupport {
-    let mut file = File::open(&source_path).expect("Unable to open file");
+    let mut file = File::open(source_path).expect("Unable to open file");
 
     let mut src = String::new();
     file.read_to_string(&mut src).expect("Unable to read file");
@@ -176,7 +176,7 @@ fn check_source(source_path: &PathBuf, is_main_file: bool) -> CrateSupport {
     let syntax = syn::parse_file(&src).expect("Unable to parse file");
 
     for attr in &syntax.attrs {
-        if let Some(conditional_attr) = ConditionalAttribute::from_attribute(&attr) {
+        if let Some(conditional_attr) = ConditionalAttribute::from_attribute(attr) {
             let no_std_ident: syn::Ident = syn::parse_quote!(no_std);
             if conditional_attr.attribute == no_std_ident {
                 if let Some(required_feature) = conditional_attr.required_feature() {
@@ -222,7 +222,8 @@ fn check_source(source_path: &PathBuf, is_main_file: bool) -> CrateSupport {
         let always_no_std: syn::Attribute = syn::parse_quote!(#![no_std]);
         let contains_always_no_std = syntax.attrs.contains(&always_no_std);
         if !contains_always_no_std {
-            let not_test_no_std: syn::Attribute = syn::parse_quote!(#![cfg_attr(not(test), no_std)]);
+            let not_test_no_std: syn::Attribute =
+                syn::parse_quote!(#![cfg_attr(not(test), no_std)]);
             let contains_not_test_no_std = syntax.attrs.contains(&not_test_no_std);
             if !contains_not_test_no_std {
                 offenses.push(SourceOffense::MissingNoStdAttribute);
@@ -268,7 +269,7 @@ fn find_use_std_statement_replacement(path_parts: &[String]) -> Option<Vec<Strin
         true => {
             let replacement_path = vec!["core".to_owned()]
                 .into_iter()
-                .chain(path_parts.into_iter().skip(1).map(|n| n.clone()))
+                .chain(path_parts.iter().skip(1).cloned())
                 .collect();
             return Some(replacement_path);
         }
@@ -287,9 +288,9 @@ fn find_use_std_statement_replacement(path_parts: &[String]) -> Option<Vec<Strin
         true => {
             let replacement_path = vec!["core".to_owned()]
                 .into_iter()
-                .chain(path_parts.into_iter().skip(1).map(|n| n.clone()))
+                .chain(path_parts.iter().skip(1).cloned())
                 .collect();
-            return Some(replacement_path);
+            Some(replacement_path)
         }
         false => None,
     }

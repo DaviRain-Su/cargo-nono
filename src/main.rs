@@ -34,9 +34,9 @@ fn check_and_print_package(
         .collect();
     let active_features = package.active_features_for_features(&package_features);
     let active_dependencies = package.active_dependencies(&active_features);
-    let _active_packages = dependencies_to_packages(&package, &metadata_full, &active_dependencies);
+    let _active_packages = dependencies_to_packages(package, metadata_full, &active_dependencies);
     let _resolved_dependency_features =
-        package.all_dependency_features(&metadata_full, &active_features);
+        package.all_dependency_features(metadata_full, &active_features);
 
     let mut support = CrateSupport::NoOffenseDetected;
     if package.is_proc_macro() {
@@ -76,7 +76,7 @@ fn check_and_print_package(
     let check = CheckResult {
         package_name: package.name.clone(),
         support,
-        active_features: active_features,
+        active_features,
     };
 
     // set flag that at least one crate check failed
@@ -96,8 +96,8 @@ fn check_and_print_package(
             "  - Crate supports no_std if \"{}\" feature is deactivated.",
             feature
         );
-        let feat = check.find_active_feature_by_name(&feature).unwrap();
-        feat.print(&metadata, 2);
+        let feat = check.find_active_feature_by_name(feature).unwrap();
+        feat.print(metadata, 2);
     }
     if let CrateSupport::SourceOffenses(ref offenses) = check.support {
         for offense in offenses {
@@ -155,7 +155,7 @@ fn main() {
         let active_features = target_package.active_features_for_features(&features);
         let active_dependencies = target_package.active_dependencies(&active_features);
         let active_packages =
-            dependencies_to_packages(&target_package, &metadata_full, &active_dependencies);
+            dependencies_to_packages(target_package, &metadata_full, &active_dependencies);
 
         let mut package_did_fail = false;
         let resolved_dependency_features =
@@ -193,5 +193,4 @@ fn main() {
         }
     }
     app.print_help().unwrap();
-    println!(""); // print newline since print_help doesn't do that
 }

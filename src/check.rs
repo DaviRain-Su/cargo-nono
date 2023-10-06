@@ -1,4 +1,3 @@
-use proc_macro2;
 use proc_macro2::TokenTree;
 
 use crate::check_source::*;
@@ -23,29 +22,28 @@ impl ConditionalAttribute {
     pub fn from_attribute(attr: &syn::Attribute) -> Option<Self> {
         let cfg_attr_path: syn::Path = syn::parse_quote!(cfg_attr);
         if attr.path == cfg_attr_path {
-            if let Some(ref first_group_ts) = attr.clone().tokens.into_iter().next() {
+            if let Some(TokenTree::Group(group)) = attr.clone().tokens.into_iter().next() {
                 // Group of the surrounding parenthesis
-                if let TokenTree::Group(group) = first_group_ts {
-                    let mut inner_group_stream = group.stream().into_iter();
-                    let condition_part_1 = inner_group_stream.next();
-                    let condition_part_2 = inner_group_stream.next();
-                    inner_group_stream.next();
-                    let gated_attr = inner_group_stream.next();
 
-                    if let Some(TokenTree::Ident(ref gated_attr_ident)) = gated_attr {
-                        let mut condition = proc_macro2::TokenStream::new();
-                        condition.extend(condition_part_1);
-                        condition.extend(condition_part_2);
+                let mut inner_group_stream = group.stream().into_iter();
+                let condition_part_1 = inner_group_stream.next();
+                let condition_part_2 = inner_group_stream.next();
+                inner_group_stream.next();
+                let gated_attr = inner_group_stream.next();
 
-                        return Some(ConditionalAttribute {
-                            condition,
-                            attribute: gated_attr_ident.clone(),
-                        });
-                    }
+                if let Some(TokenTree::Ident(ref gated_attr_ident)) = gated_attr {
+                    let mut condition = proc_macro2::TokenStream::new();
+                    condition.extend(condition_part_1);
+                    condition.extend(condition_part_2);
+
+                    return Some(ConditionalAttribute {
+                        condition,
+                        attribute: gated_attr_ident.clone(),
+                    });
                 }
             }
         }
-        return None;
+        None
     }
 
     pub fn required_feature(&self) -> Option<proc_macro2::Literal> {
@@ -77,7 +75,7 @@ impl ConditionalAttribute {
                 }
             }
         }
-        return None;
+        None
     }
 }
 
@@ -102,6 +100,6 @@ impl CheckResult {
     }
 
     pub fn find_active_feature_by_name(&self, feature: &str) -> Option<&Feature> {
-        self.active_features.iter().find(|n| &n.name == feature)
+        self.active_features.iter().find(|n| n.name == feature)
     }
 }

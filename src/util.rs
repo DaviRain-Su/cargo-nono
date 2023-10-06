@@ -1,7 +1,7 @@
+use cargo_metadata::{Dependency, Metadata, Package, PackageId};
 use std::env;
 use std::process::Command;
 use std::str::from_utf8;
-use cargo_metadata::{Dependency, Metadata, Package, PackageId};
 
 use crate::ext::{Feature, FeatureCause};
 
@@ -9,7 +9,7 @@ pub fn metadata_run(additional_args: Option<String>) -> Result<Metadata, ()> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
     cmd.arg("metadata");
-    cmd.args(&["--format-version", "1"]);
+    cmd.args(["--format-version", "1"]);
     if let Some(additional_args) = additional_args {
         cmd.arg(&additional_args);
     }
@@ -35,7 +35,7 @@ pub fn features_from_args(
         features.push(feature);
     }
     for features_args_str in features_args {
-        let feats = features_args_str.split(",");
+        let feats = features_args_str.split(',');
         for feat in feats {
             let mut feature = Feature::new(package_id.clone(), feat.to_owned());
             feature.causes.push(FeatureCause::CliFlag(feat.to_owned()));
@@ -50,9 +50,8 @@ pub fn main_ws_member_from_args<'a>(
     metadata: &'a Metadata,
     package_arg: Option<&str>,
 ) -> &'a PackageId {
-    let target_workspace_member;
-    if metadata.workspace_members.len() == 1 {
-        target_workspace_member = metadata.workspace_members.get(0).unwrap();
+    let target_workspace_member = if metadata.workspace_members.len() == 1 {
+        metadata.workspace_members.get(0).unwrap()
     } else {
         let workspace_members = &metadata.workspace_members[..];
         let workspace_packages: Vec<_> = metadata
@@ -60,16 +59,11 @@ pub fn main_ws_member_from_args<'a>(
             .iter()
             .filter(|p| workspace_members.contains(&p.id))
             .collect();
-        let package_names: Vec<_> = workspace_packages
-            .iter()
-            .map(|n| n.name.clone())
-            .collect();
+        let package_names: Vec<_> = workspace_packages.iter().map(|n| n.name.clone()).collect();
 
-        target_workspace_member = match package_arg {
+        match package_arg {
             Some(package_name) => {
-                let member = workspace_packages
-                    .iter()
-                    .find(|p| p.name == package_name);
+                let member = workspace_packages.iter().find(|p| p.name == package_name);
                 if member.is_none() {
                     println!(
                         "⚠️  Unknown package \"{}\". Please provide one of {:?} via --package flag.",
@@ -81,26 +75,24 @@ pub fn main_ws_member_from_args<'a>(
             }
             None => {
                 let current_dir = env::current_dir().unwrap();
-                let member = workspace_packages
-                    .iter()
-                    .find(|p| {
-                        if let Some(package_dir) = p.manifest_path.parent() {
-                            package_dir == current_dir.as_path()
-                        } else {
-                            false
-                        }
-                    });
-                    if member.is_none() {
-                        println!(
+                let member = workspace_packages.iter().find(|p| {
+                    if let Some(package_dir) = p.manifest_path.parent() {
+                        package_dir == current_dir.as_path()
+                    } else {
+                        false
+                    }
+                });
+                if member.is_none() {
+                    println!(
                             "⚠️  Multiple packages present in workspace. Please provide one of {:?} via --package flag.",
                             package_names
                         );
-                        std::process::exit(1);
-                    }
+                    std::process::exit(1);
+                }
                 &member.unwrap().id
             }
-        };
-    }
+        }
+    };
     target_workspace_member
 }
 
@@ -122,7 +114,7 @@ pub fn dependencies_to_packages(
         .packages
         .iter()
         .filter(|n| resolve_node.dependencies.contains(&n.id))
-        .map(|n| n.clone())
+        .cloned()
         .collect();
 
     // limit packages to only the activated dependencies
@@ -134,7 +126,7 @@ pub fn dependencies_to_packages(
                     return true;
                 }
             }
-            return false;
+            false
         })
         .collect()
 }

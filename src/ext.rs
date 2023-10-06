@@ -172,10 +172,7 @@ impl PackageExt for Package {
             }
         }
         dependencies.dedup_by(|a, b| a.name == b.name);
-        dependencies = dependencies
-            .into_iter()
-            .filter(|dep| dep.kind == DependencyKind::Normal)
-            .collect();
+        dependencies.retain(|dep| dep.kind == DependencyKind::Normal);
 
         dependencies
     }
@@ -191,7 +188,7 @@ impl PackageExt for Package {
                         return true;
                     }
                 }
-                return false;
+                false
             })
             .map(|n| n.to_owned())
             .collect()
@@ -212,7 +209,8 @@ impl PackageExt for Package {
                             .clone()
                             .into_iter()
                             .map(|raw_feature| {
-                                let mut new_feature = Feature::new(self.id.repr.clone(), raw_feature);
+                                let mut new_feature =
+                                    Feature::new(self.id.repr.clone(), raw_feature);
                                 new_feature
                                     .causes
                                     .push(FeatureCause::Feature(Box::new(feature.clone())));
@@ -222,7 +220,7 @@ impl PackageExt for Package {
                             .collect()
                     })
                     .unwrap_or_default();
-                unresolved_features.remove(&unresolved);
+                unresolved_features.remove(unresolved);
                 resolved_features.insert(unresolved.to_owned());
                 for activated in activated_features {
                     if !resolved_features.contains(&activated) {
@@ -240,27 +238,23 @@ impl PackageExt for Package {
         metadata: &Metadata,
         feature: &Feature,
     ) -> Option<Feature> {
-        if !feature.name.contains("/") {
+        if !feature.name.contains('/') {
             return None;
         }
 
-        let dependency_feature_parts: Vec<_> = feature.name.split("/").collect();
+        let dependency_feature_parts: Vec<_> = feature.name.split('/').collect();
         let dependency_name = dependency_feature_parts[0];
         let dependency_feature_name = dependency_feature_parts[1];
-        let dependency = self.dependencies.iter().find(|n| n.name == dependency_name);
-        if dependency.is_none() {
-            return None;
-        }
+        let dependency = self
+            .dependencies
+            .iter()
+            .find(|n| n.name == dependency_name)?;
 
-        let dep_package_id = metadata.dependency_package_id(self, dependency.unwrap());
         // package_id of dependency might not be findable if we try to activate the feature of a
         // optional dependency
-        if dep_package_id.is_none() {
-            return None;
-        }
+        let dep_package_id = metadata.dependency_package_id(self, dependency)?;
 
-        let mut new_feature =
-            Feature::new(dep_package_id.unwrap(), dependency_feature_name.to_owned());
+        let mut new_feature = Feature::new(dep_package_id, dependency_feature_name.to_owned());
         new_feature
             .causes
             .push(FeatureCause::Feature(Box::new(feature.clone())));
@@ -288,7 +282,9 @@ impl PackageExt for Package {
                     .into_iter()
                     .map(|raw_feature| {
                         let mut feature = Feature::new(dep_package_id.to_owned(), raw_feature);
-                        feature.causes.push(FeatureCause::Explicit(self.id.repr.clone()));
+                        feature
+                            .causes
+                            .push(FeatureCause::Explicit(self.id.repr.clone()));
                         feature
                     })
                     .collect::<Vec<_>>();
@@ -298,7 +294,9 @@ impl PackageExt for Package {
                 // or the absence of the default-features option
                 if dependency.uses_default_features {
                     let mut feature = Feature::new(dep_package_id.to_owned(), "default".to_owned());
-                    feature.causes.push(FeatureCause::Default(self.id.repr.clone()));
+                    feature
+                        .causes
+                        .push(FeatureCause::Default(self.id.repr.clone()));
 
                     explicit_dependency_features.push(feature);
                 }
@@ -336,9 +334,7 @@ impl PackageExt for Package {
     fn is_proc_macro(&self) -> bool {
         self.targets
             .iter()
-            .filter(|target| target.kind.contains(&"proc-macro".to_string()))
-            .next()
-            .is_some()
+            .any(|target| target.kind.contains(&"proc-macro".to_string()))
     }
 }
 
@@ -368,7 +364,7 @@ impl MetadataExt for Metadata {
             .packages
             .iter()
             .filter(|n| resolve_node.dependencies.contains(&n.id))
-            .map(|n| n.clone())
+            .cloned()
             .collect();
 
         dependency_packages
