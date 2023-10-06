@@ -21,7 +21,7 @@ pub struct ConditionalAttribute {
 impl ConditionalAttribute {
     pub fn from_attribute(attr: &syn::Attribute) -> Option<Self> {
         let cfg_attr_path: syn::Path = syn::parse_quote!(cfg_attr);
-        if attr.path == cfg_attr_path {
+        if attr.path() == &cfg_attr_path {
             if let Some(TokenTree::Group(group)) = attr.clone().tokens.into_iter().next() {
                 // Group of the surrounding parenthesis
 
