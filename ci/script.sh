@@ -11,7 +11,7 @@ main() {
         return
     fi
     # ISSUE #37 - Tests don't work quite right on linux CI
-    if [ $TRAVIS_OS_NAME = linux ]; then
+    if [ $RUNNER_OS = "Linux" ]; then
         return
     fi
 
@@ -23,6 +23,6 @@ main() {
 }
 
 # we don't run the "test phase" when doing deploys
-if [ -z $TRAVIS_TAG ]; then
+if [ -z $GITHUB_REF ]; then
     main
 fi
