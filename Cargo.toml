@@ -1,6 +1,6 @@
 [package]
 name = "cargo-davinono"
-version = "0.1.10"
+version = "0.1.11"
 authors = ["Maximilian Goisser <goisser94@gmail.com>", "davirain.yin@gmail.com"]
 description = "Detect (possible) no_std compatibility of your crate and dependencies"
 keywords = ["cargo", "no_std", "nono", "subcommand"]

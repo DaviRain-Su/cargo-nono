@@ -9,21 +9,12 @@ However it is currently a very cumbersome process to find out if and why (not) a
 
 ## Installation
 
-### Prebuilt binaries
-
-`cargo-nono` also comes as prebuilt binaries (useful for CI):
-
-```bash
-curl -LSfs https://japaric.github.io/trust/install.sh | \
-    sh -s -- --git hobofan/cargo-nono
-```
-
 ### From crates.io
 
 ```bash
-cargo install cargo-nono
+cargo install cargo-davinono
 # For warnings with more informative messages install like this
-RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-nono
+RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-davinono
 ```
 
 ## Demo
@@ -49,6 +40,7 @@ The `cargo nono check` subcommand also understands the `--no-default-features` a
 ### Planned features
 
 - Warn of `[build-dependencies]` features bleeding over: [cargo#5730](https://github.com/rust-lang/cargo/issues/5730)
+- Alos Warn `use std::`, but this code above have #[cfg(feature = "std")] or #[cfg(not(feature = "std"))]
 
 ## License
 
