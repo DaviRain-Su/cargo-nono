@@ -22,7 +22,7 @@ main() {
 
     # TODO Update this to package the right artifacts
     # cp target/$TARGET/release/cargo-nono $stage/
-    cp target/release/cargo-nono $stage/
+    cp target/release/cargo-davinono $stage/
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *

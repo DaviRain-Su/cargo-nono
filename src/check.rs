@@ -2,6 +2,7 @@ use proc_macro2::TokenTree;
 
 use crate::check_source::*;
 use crate::ext::*;
+use quote::quote;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum CrateSupport {
@@ -22,19 +23,22 @@ impl ConditionalAttribute {
     pub fn from_attribute(attr: &syn::Attribute) -> Option<Self> {
         let cfg_attr_path: syn::Path = syn::parse_quote!(cfg_attr);
         if attr.path() == &cfg_attr_path {
-            if let Some(TokenTree::Group(group)) = attr.clone().tokens.into_iter().next() {
-                // Group of the surrounding parenthesis
+            if let syn::Meta::List(meta_list) = &attr.meta {
+                let mut tokens_iter = meta_list.tokens.clone().into_iter();
 
-                let mut inner_group_stream = group.stream().into_iter();
-                let condition_part_1 = inner_group_stream.next();
-                let condition_part_2 = inner_group_stream.next();
-                inner_group_stream.next();
-                let gated_attr = inner_group_stream.next();
+                let condition_part_1 = tokens_iter.next();
+                let condition_part_2 = tokens_iter.next();
+                tokens_iter.next();
+                let gated_attr = tokens_iter.next();
 
-                if let Some(TokenTree::Ident(ref gated_attr_ident)) = gated_attr {
+                if let Some(proc_macro2::TokenTree::Ident(ref gated_attr_ident)) = gated_attr {
                     let mut condition = proc_macro2::TokenStream::new();
-                    condition.extend(condition_part_1);
-                    condition.extend(condition_part_2);
+                    if let Some(proc_macro2::TokenTree::Literal(lit)) = condition_part_1 {
+                        condition.extend(quote! { #lit });
+                    }
+                    if let Some(proc_macro2::TokenTree::Literal(lit)) = condition_part_2 {
+                        condition.extend(quote! { #lit });
+                    }
 
                     return Some(ConditionalAttribute {
                         condition,
