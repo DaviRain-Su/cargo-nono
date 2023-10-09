@@ -1,13 +1,13 @@
 [package]
 name = "cargo-davinono"
-version = "0.1.11"
+version = "0.1.12"
 authors = ["Maximilian Goisser <goisser94@gmail.com>", "davirain.yin@gmail.com"]
 description = "Detect (possible) no_std compatibility of your crate and dependencies"
 keywords = ["cargo", "no_std", "nono", "subcommand"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/hobofan/cargo-nono"
-documentation = "https://github.com/hobofan/cargo-nono"
-edition = "2018"
+repository = "https://github.com/DaviRain-Su/cargo-nono.git"
+documentation = "https://github.com/DaviRain-Su/cargo-nono.git"
+edition = "2021"
 
 [dependencies]
 cargo_metadata = "0.8.2"
@@ -16,8 +16,8 @@ serde_json = "1.0.40"
 console = "0.7.7"
 clap = "2.33.0"
 glob = "0.3.0"
-syn = { version = "2.0.38", default-features = false, features = ["full", "extra-traits", "parsing"] }
-quote = { version = "1.0.1", default-features = false }
+syn = { version = "2.0", features = ["full", "visit-mut"] }
+quote = "1.0"
 proc-macro2 = { version = "1.0.1", default-features = false }
 
 [dev-dependencies]

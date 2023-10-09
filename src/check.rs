@@ -3,6 +3,7 @@ use proc_macro2::TokenTree;
 use crate::check_source::*;
 use crate::ext::*;
 use quote::quote;
+use syn::parse_quote;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum CrateSupport {
@@ -21,8 +22,7 @@ pub struct ConditionalAttribute {
 
 impl ConditionalAttribute {
     pub fn from_attribute(attr: &syn::Attribute) -> Option<Self> {
-        let cfg_attr_path: syn::Path = syn::parse_quote!(cfg_attr);
-        if attr.path() == &cfg_attr_path {
+        if attr.path().is_ident("cfg_attr") {
             if let syn::Meta::List(meta_list) = &attr.meta {
                 let mut tokens_iter = meta_list.tokens.clone().into_iter();
 
@@ -51,9 +51,9 @@ impl ConditionalAttribute {
     }
 
     pub fn required_feature(&self) -> Option<proc_macro2::Literal> {
-        let not_ident: syn::Ident = syn::parse_quote!(not);
-        let feature_ident: syn::Ident = syn::parse_quote!(feature);
-        let equal_punct: proc_macro2::Punct = syn::parse_quote!(=);
+        let not_ident: syn::Ident = parse_quote!(not);
+        let feature_ident: syn::Ident = parse_quote!(feature);
+        let equal_punct: proc_macro2::Punct = parse_quote!(=);
 
         let mut ts = self.condition.clone().into_iter();
         if let Some(TokenTree::Ident(not_ident_parsed)) = ts.next() {

@@ -1,7 +1,9 @@
 use std::fmt;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
+use syn::parse_quote;
 
 #[cfg(feature = "proc_macro_spans")]
 use std::io::BufRead;
@@ -20,10 +22,17 @@ pub enum SourceOffense {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
 pub struct UseStdStmt {
     src_path: PathBuf,
     item_tree: syn::UseTree,
+}
+
+impl Debug for UseStdStmt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UseStdStmt")
+            .field("src_path", &self.src_path)
+            .finish()
+    }
 }
 
 impl UseStdStmt {
@@ -177,7 +186,7 @@ fn check_source(source_path: &PathBuf, is_main_file: bool) -> CrateSupport {
 
     for attr in &syntax.attrs {
         if let Some(conditional_attr) = ConditionalAttribute::from_attribute(attr) {
-            let no_std_ident: syn::Ident = syn::parse_quote!(no_std);
+            let no_std_ident: syn::Ident = parse_quote!(no_std);
             if conditional_attr.attribute == no_std_ident {
                 if let Some(required_feature) = conditional_attr.required_feature() {
                     let mut feature_name = required_feature.to_string();
@@ -199,7 +208,7 @@ fn check_source(source_path: &PathBuf, is_main_file: bool) -> CrateSupport {
         })
         .collect();
 
-    let std_ident: syn::Ident = syn::parse_quote!(std);
+    let std_ident: syn::Ident = parse_quote!(std);
     for use_statement in &use_statements {
         match use_statement.tree {
             syn::UseTree::Path(ref first_path) => {
@@ -219,12 +228,17 @@ fn check_source(source_path: &PathBuf, is_main_file: bool) -> CrateSupport {
     }
 
     if is_main_file {
-        let always_no_std: syn::Attribute = syn::parse_quote!(#![no_std]);
-        let contains_always_no_std = syntax.attrs.contains(&always_no_std);
+        let contains_always_no_std = syntax
+            .attrs
+            .iter()
+            .any(|attr| attr.path().is_ident("#![no_std]"));
+
         if !contains_always_no_std {
-            let not_test_no_std: syn::Attribute =
-                syn::parse_quote!(#![cfg_attr(not(test), no_std)]);
-            let contains_not_test_no_std = syntax.attrs.contains(&not_test_no_std);
+            let contains_not_test_no_std = syntax
+                .attrs
+                .iter()
+                .any(|attr| attr.path().is_ident("#![cfg_attr(not(test), no_std)]"));
+
             if !contains_not_test_no_std {
                 offenses.push(SourceOffense::MissingNoStdAttribute);
             }
